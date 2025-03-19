@@ -211,7 +211,18 @@ const Wishlist = () => {
       <h3 style={{ marginTop: "20px" }}>📜 Wishlist Items</h3>
       {wishlist.length === 0 ? <p>No items yet!</p> : null}
 
-      <div>
+      <div
+        style={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "15px",
+          margin: "10px 0",
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+          boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+          transition: "all 0.2s ease-in-out",
+        }}
+      >
         {wishlist.items.map((wishlistItem) => (
           <Animation
             key={wishlistItem.id}
@@ -247,29 +258,50 @@ const Wishlist = () => {
                 </p>
               </div>
 
-              {wishlistItem.favorite && (
-                <Chip
-                  text="❤️ Favorite"
-                  style={{
-                    backgroundColor: "#ff6f61",
-                    color: "#fff",
-                    marginRight: "5px",
-                  }}
-                />
-              )}
+              <div
+                style={{
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                {wishlistItem.favorite && (
+                  <Chip
+                    text="❤️ Favorite"
+                    style={{
+                      backgroundColor: "#ff6f61",
+                      color: "#fff",
+                    }}
+                  />
+                )}
 
-              <Button onClick={() => removeItem(wishlistItem.id)} look="flat">
-                ❌
-              </Button>
+                <Button onClick={() => removeItem(wishlistItem.id)} look="flat">
+                  ❌
+                </Button>
+              </div>
             </div>
           </Animation>
         ))}
       </div>
       <div>
         <Button
-          onClick={fetchRecommendations} primary={true}
+          onClick={fetchRecommendations}
+          primary={true}
           look="flat"
-          style={{ marginRight: "5px" }}
+          style={{
+            marginTop: "15px",
+            padding: "10px 15px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            borderRadius: "8px",
+            background: "linear-gradient(45deg, #6a1b9a, #ff6f61)",
+            color: "white",
+            transition: "all 0.3s ease",
+            boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
+          }}
+          onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+          onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
         >
           🔍 Get AI-Recommendations
         </Button>
@@ -293,8 +325,12 @@ const Wishlist = () => {
           onClose={() => setShowRecommendations(false)}
           style={{
             marginTop: "20px",
-            padding: "10px",
-            borderRadius: "5px",
+            padding: "15px",
+            borderRadius: "10px",
+            background: "#e3fcef",
+            color: "#2e7d32",
+            fontWeight: "bold",
+            boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
           }}
         >
           <strong>🤖 AI Recommendations:</strong>
