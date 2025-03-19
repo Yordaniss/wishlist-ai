@@ -1,106 +1,233 @@
 import React, { useState, useEffect } from "react";
-import { Grid, GridColumn } from "@progress/kendo-react-grid";
 import { Button } from "@progress/kendo-react-buttons";
-import { Input } from "@progress/kendo-react-inputs";
+import { Input, TextArea, Checkbox } from "@progress/kendo-react-inputs";
+import { DropDownList, ComboBox } from "@progress/kendo-react-dropdowns";
+import { Avatar } from "@progress/kendo-react-layout";
+import { Chip } from "@progress/kendo-react-buttons";
+import { Animation } from "@progress/kendo-react-animation";
 import { Notification } from "@progress/kendo-react-notification";
-import { db, collection, addDoc, getDocs, deleteDoc, doc } from "../api/firebase";
+import { ProgressBar } from "@progress/kendo-react-progressbars";
+import {
+  db,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "../api/firebase";
 
 const Wishlist = () => {
   const [wishlist, setWishlist] = useState([]);
-  const [item, setItem] = useState("");
+  const [item, setItem] = useState({
+    name: "",
+    price: "",
+    description: "",
+    category: "",
+    favorite: false,
+  });
   const [recommendations, setRecommendations] = useState([]);
-  const [showNotification, setShowNotification] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [showItems, setShowItems] = useState({});
 
   useEffect(() => {
-    // 🔹 Assign a unique ID if the user is new
     let storedId = localStorage.getItem("wishlistUserId");
     if (!storedId) {
       storedId = Math.random().toString(36).substring(2, 10);
       localStorage.setItem("wishlistUserId", storedId);
     }
     setUserId(storedId);
-
-    // 🔹 Fetch wishlist from Firestore
     fetchWishlist(storedId);
   }, []);
 
-  // Fetch Wishlist from Firestore
   const fetchWishlist = async (uid) => {
-    const querySnapshot = await getDocs(collection(db, `wishlists/${uid}/items`));
-    const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const querySnapshot = await getDocs(
+      collection(db, `wishlists/${uid}/items`)
+    );
+    const items = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
     setWishlist(items);
   };
 
-  // Add Item to Firestore
   const addItem = async () => {
-    if (!item) return;
-    const newItem = { name: item };
-    
-    // 🔹 Save to Firestore
-    const docRef = await addDoc(collection(db, `wishlists/${userId}/items`), newItem);
-    setWishlist([...wishlist, { id: docRef.id, ...newItem }]);
-    setItem("");
+    if (!item.name) return;
+    const newItem = { ...item };
 
-    // Fetch AI Recommendations
-    await fetchRecommendations(item);
+    const docRef = await addDoc(
+      collection(db, `wishlists/${userId}/items`),
+      newItem
+    );
+    setWishlist([...wishlist, { id: docRef.id, ...newItem }]);
+    setItem({
+      name: "",
+      price: "",
+      description: "",
+      category: "",
+      favorite: false,
+    });
+
+    setShowItems((prev) => ({ ...prev, [docRef.id]: true }));
   };
 
-  // Fetch AI-powered recommendations
   const fetchRecommendations = async (itemName) => {
+    setLoading(true);
     try {
       const response = await fetch(
         `http://localhost:5000/api/recommendations?item=${itemName}`
       );
       const data = await response.json();
-
-      if (data.error) {
-        console.error("API Error:", data.error);
-        return;
-      }
-
-      setRecommendations(data.suggestions || []);
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
+      setRecommendations(data.recommendations.split("\n"));
+      setShowRecommendations(true);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Remove Item from Firestore
   const removeItem = async (id) => {
     await deleteDoc(doc(db, `wishlists/${userId}/items`, id));
-    setWishlist(wishlist.filter(item => item.id !== id));
+    setWishlist(wishlist.filter((item) => item.id !== id));
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
-      <h2>My Wishlist</h2>
-      <Input value={item} onChange={(e) => setItem(e.target.value)} placeholder="Enter an item" />
-      <Button onClick={addItem} primary={true} style={{ marginLeft: "10px" }}>Add</Button>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "auto",
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h2>🎁 My Wishlist</h2>
 
-      <Grid data={wishlist} style={{ marginTop: "20px" }}>
-        <GridColumn field="name" title="Wishlist Item" />
-        <GridColumn
-          title="Actions"
-          cell={(props) => (
-            <td>
-              <Button onClick={() => removeItem(props.dataItem.id)} look="flat" icon="delete" />
-            </td>
-          )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <Input
+          value={item.name}
+          onChange={(e) => setItem({ ...item, name: e.value })}
+          placeholder="Item Name"
         />
-      </Grid>
+        <Input
+          value={item.price}
+          onChange={(e) => setItem({ ...item, price: e.value })}
+          placeholder="Price"
+        />
+        <TextArea
+          value={item.description}
+          onChange={(e) => setItem({ ...item, description: e.value })}
+          placeholder="Description"
+        />
+        <DropDownList
+          data={["Electronics", "Clothing", "Books", "Accessories"]}
+          value={item.category || null}
+          onChange={(e) => setItem({ ...item, category: e.target.value })}
+          defaultItem="Select Category"
+          style={{ width: "300px" }}
+        />
+      </div>
+      <div style={{ marginTop: "10px" }}>
+        <Checkbox
+          checked={item.favorite}
+          label="❤️ Mark as Favorite"
+          onChange={(e) => setItem({ ...item, favorite: e.value })}
+        />
+        <Button onClick={addItem} primary={true} style={{ marginTop: "10px" }}>
+          ➕ Add to Wishlist
+        </Button>
+      </div>
 
-      {showNotification && (
-        <Notification type={{ style: "success", icon: true }}>
-          <div>
-            <strong>AI Recommendations:</strong>
-            <ul>
-              {recommendations.map((rec, index) => (
-                <li key={index}>{rec}</li>
-              ))}
-            </ul>
-          </div>
+      <h3 style={{ marginTop: "20px" }}>📜 Wishlist Items</h3>
+      {wishlist.length === 0 ? <p>No items yet!</p> : null}
+
+      <div>
+        {wishlist.map((wishlistItem) => (
+          <Animation
+            key={wishlistItem.id}
+            transitionName="fade"
+            appear={showItems[wishlistItem.id]}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "10px",
+                borderBottom: "1px solid #ddd",
+              }}
+            >
+              <Avatar
+                shape="circle"
+                type="text"
+                style={{
+                  backgroundColor: "#6a1b9a",
+                  color: "white",
+                  fontSize: "14px",
+                }}
+              >
+                {wishlistItem.name.charAt(0)}
+              </Avatar>
+
+              <div style={{ flexGrow: 1, marginLeft: "10px" }}>
+                <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
+                <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                  {wishlistItem.description}
+                </p>
+              </div>
+
+              {wishlistItem.favorite && (
+                <Chip
+                  text="❤️ Favorite"
+                  style={{
+                    backgroundColor: "#ff6f61",
+                    color: "#fff",
+                    marginRight: "5px",
+                  }}
+                />
+              )}
+
+              <Button
+                onClick={() => fetchRecommendations(wishlistItem.name)}
+                look="flat"
+                style={{ marginRight: "5px" }}
+              >
+                🔍 Recommend
+              </Button>
+              <Button onClick={() => removeItem(wishlistItem.id)} look="flat">
+                ❌
+              </Button>
+            </div>
+          </Animation>
+        ))}
+      </div>
+
+      {loading && (
+        <div style={{ marginTop: "20px" }}>
+          <h4>Loading Recommendations...</h4>
+          <ProgressBar animationDuration={500} style={{ width: "100%" }} />
+        </div>
+      )}
+
+      {showRecommendations && (
+        <Notification
+          type={{ style: "success", icon: true }}
+          closable={true}
+          onClose={() => setShowRecommendations(false)}
+          style={{
+            marginTop: "20px",
+            padding: "10px",
+            background: "#e0f7fa",
+            borderRadius: "5px",
+          }}
+        >
+          <strong>🤖 AI Recommendations:</strong>
+          <ul>
+            {recommendations.map((rec, index) => (
+              <li key={index}>{rec}</li>
+            ))}
+          </ul>
         </Notification>
       )}
     </div>
