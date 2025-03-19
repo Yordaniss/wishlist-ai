@@ -14,6 +14,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
 } from "../api/firebase";
 
 const Wishlist = () => {
@@ -54,7 +55,7 @@ const Wishlist = () => {
 
   const addItem = async () => {
     if (!item.name) return;
-    const newItem = { ...item };
+    const newItem = { ...item, reservedBy: null };
 
     const docRef = await addDoc(
       collection(db, `wishlists/${userId}/items`),
@@ -73,6 +74,34 @@ const Wishlist = () => {
   };
 
   const [progress, setProgress] = useState(0);
+
+  const reserveItem = async (itemId) => {
+    console.log(itemId)
+    console.log(userId)
+    if (!userId || !itemId) {
+      alert("Error: Missing Wishlist ID or Item ID! ❌");
+      return;
+    }
+
+    const itemRef = doc(db, `wishlists/${userId}/items`, itemId); // ✅ Correct Path
+
+    try {
+      await updateDoc(itemRef, { reservedBy: "Someone" }); // 🔹 Update reservation
+      setWishlist((prev) =>
+        prev.map((item) =>
+          item.id === itemId ? { ...item, reservedBy: "Someone" } : item
+        )
+      );
+    } catch (error) {
+      console.error("Error reserving item:", error);
+    }
+  };
+
+  const shareWishlist = () => {
+    const shareUrl = window.location.href;
+    navigator.clipboard.writeText(shareUrl);
+    alert("📋 Wishlist link copied! Share it with friends.");
+  };
 
   const fetchRecommendations = async (itemName) => {
     setLoading(true);
@@ -126,6 +155,13 @@ const Wishlist = () => {
       }}
     >
       <h2>🎁 My Wishlist</h2>
+      <Button
+        onClick={shareWishlist}
+        primary={true}
+        style={{ marginBottom: "10px" }}
+      >
+        📢 Share Wishlist
+      </Button>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         <Input
@@ -197,7 +233,13 @@ const Wishlist = () => {
                 <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
                 <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
                   {wishlistItem.description}
+                  {wishlistItem.reservedBy ? ` (Reserved by ${wishlistItem.reservedBy})` : ""}
                 </p>
+                {!wishlistItem.reservedBy && (
+                  <Button onClick={() => reserveItem(wishlistItem.id)}>
+                    ✅ Reserve
+                  </Button>
+                )}
               </div>
 
               {wishlistItem.favorite && (
