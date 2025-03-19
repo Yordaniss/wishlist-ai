@@ -152,7 +152,7 @@ const Wishlist = () => {
 
   const removeItem = async (id) => {
     await deleteDoc(doc(db, `wishlists/${userId}/items`, id));
-    setWishlist(wishlist.filter((item) => item.id !== id));
+    setWishlist(wishlist.items.filter((item) => item.id !== id));
   };
 
   return (
