@@ -1,13 +1,18 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Home from "./components/Home";
 import Wishlist from "./components/Wishlist";
 import '@progress/kendo-theme-default/dist/all.css';
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <Wishlist />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/wishlist/:id" element={<Wishlist />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
