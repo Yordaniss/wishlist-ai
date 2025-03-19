@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@progress/kendo-react-buttons";
 import { Input, TextArea, Checkbox } from "@progress/kendo-react-inputs";
-import { DropDownList, ComboBox } from "@progress/kendo-react-dropdowns";
+import { DropDownList } from "@progress/kendo-react-dropdowns";
 import { Avatar } from "@progress/kendo-react-layout";
 import { Chip } from "@progress/kendo-react-buttons";
 import { Animation } from "@progress/kendo-react-animation";
@@ -72,19 +72,42 @@ const Wishlist = () => {
     setShowItems((prev) => ({ ...prev, [docRef.id]: true }));
   };
 
+  const [progress, setProgress] = useState(0);
+
   const fetchRecommendations = async (itemName) => {
     setLoading(true);
+    setProgress(0); // Reset progress
+
+    // Simulate progress update
+    const interval = setInterval(() => {
+      setProgress((oldProgress) => {
+        if (oldProgress >= 90) {
+          clearInterval(interval);
+          return oldProgress; // Stop at 90%, wait for API response
+        }
+        return oldProgress + 5; // Increase by 10% every 300ms
+      });
+    }, 300);
+
     try {
       const response = await fetch(
         `http://localhost:5000/api/recommendations?item=${itemName}`
       );
       const data = await response.json();
-      setRecommendations(data.recommendations.split("\n"));
+
+      if (data.error) {
+        console.error("API Error:", data.error);
+        return;
+      }
+
+      setRecommendations(data.split("\n"));
       setShowRecommendations(true);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
     } finally {
-      setLoading(false);
+      clearInterval(interval);
+      setProgress(100); // Finish at 100%
+      setTimeout(() => setLoading(false), 500); // Hide after short delay
     }
   };
 
@@ -206,7 +229,11 @@ const Wishlist = () => {
       {loading && (
         <div style={{ marginTop: "20px" }}>
           <h4>Loading Recommendations...</h4>
-          <ProgressBar animationDuration={500} style={{ width: "100%" }} />
+          <ProgressBar
+            value={progress}
+            animationDuration={200}
+            style={{ width: "100%" }}
+          />
         </div>
       )}
 
@@ -218,7 +245,6 @@ const Wishlist = () => {
           style={{
             marginTop: "20px",
             padding: "10px",
-            background: "#e0f7fa",
             borderRadius: "5px",
           }}
         >
