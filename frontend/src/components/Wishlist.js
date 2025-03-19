@@ -107,27 +107,33 @@ const Wishlist = () => {
     alert("📋 Wishlist link copied! Share it with friends.");
   };
 
-  const fetchRecommendations = async (itemName) => {
+  const fetchRecommendations = async () => {
     setLoading(true);
     setProgress(0); // Reset progress
 
-    // Simulate progress update
     const interval = setInterval(() => {
       setProgress((oldProgress) => {
         if (oldProgress >= 90) {
           clearInterval(interval);
-          return oldProgress; // Stop at 90%, wait for API response
+          return oldProgress;
         }
-        return oldProgress + 5; // Increase by 10% every 300ms
+        return oldProgress + 5;
       });
     }, 300);
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/recommendations?item=${itemName}`
+        "http://localhost:5000/api/recommendations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ items: wishlist.items.map((i) => i.name) }),
+        }
       );
-      const data = await response.json();
 
+      const data = await response.json();
       if (data.error) {
         console.error("API Error:", data.error);
         return;
@@ -139,8 +145,8 @@ const Wishlist = () => {
       console.error("Error fetching recommendations:", error);
     } finally {
       clearInterval(interval);
-      setProgress(100); // Finish at 100%
-      setTimeout(() => setLoading(false), 500); // Hide after short delay
+      setProgress(100);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
@@ -237,9 +243,7 @@ const Wishlist = () => {
                 <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
                 <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
                   {wishlistItem.description}
-                  {wishlistItem.reserved
-                    ? "Reserved"
-                    : ""}
+                  {wishlistItem.reserved ? "Reserved" : ""}
                 </p>
               </div>
 
@@ -254,19 +258,21 @@ const Wishlist = () => {
                 />
               )}
 
-              <Button
-                onClick={() => fetchRecommendations(wishlistItem.name)}
-                look="flat"
-                style={{ marginRight: "5px" }}
-              >
-                🔍 Recommend
-              </Button>
               <Button onClick={() => removeItem(wishlistItem.id)} look="flat">
                 ❌
               </Button>
             </div>
           </Animation>
         ))}
+      </div>
+      <div>
+        <Button
+          onClick={fetchRecommendations} primary={true}
+          look="flat"
+          style={{ marginRight: "5px" }}
+        >
+          🔍 Get AI-Recommendations
+        </Button>
       </div>
 
       {loading && (

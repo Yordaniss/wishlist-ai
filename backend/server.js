@@ -9,13 +9,14 @@ app.use(cors());
 app.use(express.json());
 
 // Endpoint to get AI-powered recommendations
-app.get("/api/recommendations", async (req, res) => {
+app.post("/api/recommendations", async (req, res) => {
   try {
-    const query = req.query.item; // Item name from frontend
-    if (!query)
-      return res.status(400).json({ error: "Item query is required" });
+    const { items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Items list is required" });
+    }
+    console.log(items.join(", "));
 
-    // Fetch from Cloudflare API
     const message = {
       messages: [
         {
@@ -25,7 +26,9 @@ app.get("/api/recommendations", async (req, res) => {
         },
         {
           role: "user",
-          content: `Suggest 3 related items for: ${query}`,
+          content: `Suggest 3 related items for this wishlist: ${items.join(
+            ", "
+          )}`,
         },
       ],
     };
