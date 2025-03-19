@@ -12,13 +12,13 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   doc,
-  updateDoc,
 } from "../api/firebase";
 
 const Wishlist = () => {
-  const [wishlist, setWishlist] = useState([]);
+  const [wishlist, setWishlist] = useState({ id: "", shareId: "", items: [] });
   const [item, setItem] = useState({
     name: "",
     price: "",
@@ -26,12 +26,14 @@ const Wishlist = () => {
     category: "",
     favorite: false,
   });
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(false);
   const [userId, setUserId] = useState(null);
   const [showItems, setShowItems] = useState({});
+  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
 
+  // Fetch wishlist on component mount
   useEffect(() => {
     let storedId = localStorage.getItem("wishlistUserId");
     if (!storedId) {
@@ -42,17 +44,34 @@ const Wishlist = () => {
     fetchWishlist(storedId);
   }, []);
 
+  // ✅ Fetch Wishlist (Metadata + Items)
   const fetchWishlist = async (uid) => {
-    const querySnapshot = await getDocs(
-      collection(db, `wishlists/${uid}/items`)
-    );
-    const items = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setWishlist(items);
+    try {
+      const wishlistRef = doc(db, "wishlists", uid);
+      const wishlistSnap = await getDoc(wishlistRef);
+
+      if (!wishlistSnap.exists()) {
+        alert("❌ Wishlist not found!");
+        return;
+      }
+
+      const wishlistData = wishlistSnap.data(); // 🔹 Get shareId
+
+      const itemsQuerySnapshot = await getDocs(
+        collection(db, `wishlists/${uid}/items`)
+      );
+      const items = itemsQuerySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setWishlist({ id: uid, shareId: wishlistData.shareId, items });
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+    }
   };
 
+  // ✅ Add New Item
   const addItem = async () => {
     if (!item.name) return;
     const newItem = { ...item, reservedBy: null };
@@ -61,7 +80,11 @@ const Wishlist = () => {
       collection(db, `wishlists/${userId}/items`),
       newItem
     );
-    setWishlist([...wishlist, { id: docRef.id, ...newItem }]);
+    setWishlist((prev) => ({
+      ...prev,
+      items: [...prev.items, { id: docRef.id, ...newItem }],
+    }));
+
     setItem({
       name: "",
       price: "",
@@ -69,37 +92,18 @@ const Wishlist = () => {
       category: "",
       favorite: false,
     });
-
     setShowItems((prev) => ({ ...prev, [docRef.id]: true }));
   };
 
-  const [progress, setProgress] = useState(0);
-
-  const reserveItem = async (itemId) => {
-    console.log(itemId)
-    console.log(userId)
-    if (!userId || !itemId) {
-      alert("Error: Missing Wishlist ID or Item ID! ❌");
+  // ✅ Share Wishlist
+  const shareWishlist = () => {
+    if (!wishlist.shareId) {
+      alert("❌ Error: Share ID not found!");
       return;
     }
 
-    const itemRef = doc(db, `wishlists/${userId}/items`, itemId); // ✅ Correct Path
-
-    try {
-      await updateDoc(itemRef, { reservedBy: "Someone" }); // 🔹 Update reservation
-      setWishlist((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? { ...item, reservedBy: "Someone" } : item
-        )
-      );
-    } catch (error) {
-      console.error("Error reserving item:", error);
-    }
-  };
-
-  const shareWishlist = () => {
-    const shareUrl = window.location.href;
-    navigator.clipboard.writeText(shareUrl);
+    const shareLink = `${window.location.origin}/shared/${wishlist.shareId}`;
+    navigator.clipboard.writeText(shareLink);
     alert("📋 Wishlist link copied! Share it with friends.");
   };
 
@@ -202,7 +206,7 @@ const Wishlist = () => {
       {wishlist.length === 0 ? <p>No items yet!</p> : null}
 
       <div>
-        {wishlist.map((wishlistItem) => (
+        {wishlist.items.map((wishlistItem) => (
           <Animation
             key={wishlistItem.id}
             transitionName="fade"
@@ -233,13 +237,10 @@ const Wishlist = () => {
                 <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
                 <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
                   {wishlistItem.description}
-                  {wishlistItem.reservedBy ? ` (Reserved by ${wishlistItem.reservedBy})` : ""}
+                  {wishlistItem.reserved
+                    ? "Reserved"
+                    : ""}
                 </p>
-                {!wishlistItem.reservedBy && (
-                  <Button onClick={() => reserveItem(wishlistItem.id)}>
-                    ✅ Reserve
-                  </Button>
-                )}
               </div>
 
               {wishlistItem.favorite && (

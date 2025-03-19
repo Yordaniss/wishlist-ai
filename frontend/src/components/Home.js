@@ -17,19 +17,20 @@ const Home = () => {
   }, []);
 
   const createNewWishlist = async () => {
-    const newId = Math.random().toString(36).substring(2, 10);
-    localStorage.setItem("wishlistUserId", newId);
+    const wishlistId = Math.random().toString(36).substring(2, 10);
+    const shareId = Math.random().toString(36).substring(2, 10); // ✅ Generate a share ID
+
+    localStorage.setItem("wishlistUserId", wishlistId);
 
     try {
-      // 🔹 Create a new wishlist document in Firestore
-      await setDoc(doc(db, "wishlists", newId), {
+      await setDoc(doc(db, "wishlists", wishlistId), {
+        shareId,
         createdAt: new Date(),
       });
 
-      navigate(`/wishlist/${newId}`);
+      navigate(`/wishlist/${wishlistId}`);
     } catch (error) {
-      console.log("Error creating wishlist:", error);
-      alert("Failed to create wishlist. Try again! ❌");
+      console.error("Error creating wishlist:", error);
     }
   };
 
