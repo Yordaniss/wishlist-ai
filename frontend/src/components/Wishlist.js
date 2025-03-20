@@ -194,7 +194,6 @@ const Wishlist = () => {
           value={item.category || null}
           onChange={(e) => setItem({ ...item, category: e.target.value })}
           defaultItem="Select Category"
-          style={{ width: "300px" }}
         />
       </div>
       <div style={{ marginTop: "10px" }}>
@@ -235,7 +234,6 @@ const Wishlist = () => {
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "10px",
-                borderBottom: "1px solid #ddd",
               }}
             >
               <Avatar
@@ -250,35 +248,50 @@ const Wishlist = () => {
                 {wishlistItem.name.charAt(0)}
               </Avatar>
 
-              <div style={{ flexGrow: 1, marginLeft: "10px" }}>
-                <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
-                <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
-                  {wishlistItem.description}
-                  {wishlistItem.reserved ? "Reserved" : ""}
-                </p>
-              </div>
-
               <div
                 style={{
-                  marginLeft: "auto",
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
+                  justifyContent: "space-between",
+                  margin: "10px",
+                  width: "500px",
                 }}
               >
-                {wishlistItem.favorite && (
-                  <Chip
-                    text="❤️ Favorite"
-                    style={{
-                      backgroundColor: "#ff6f61",
-                      color: "#fff",
-                    }}
-                  />
-                )}
+                {/* Left Section: Item Details */}
+                <div style={{ flexGrow: 1 }}>
+                  <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
+                  <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                    {wishlistItem.description}
+                    {wishlistItem.reserved ? "Reserved" : ""}
+                  </p>
+                </div>
 
-                <Button onClick={() => removeItem(wishlistItem.id)} look="flat">
-                  ❌
-                </Button>
+                {/* Right Section: Favorite Chip & Remove Button */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginLeft: "200px",
+                  }}
+                >
+                  {wishlistItem.favorite && (
+                    <Chip
+                      text="❤️"
+                      style={{
+                        backgroundColor: "#ff6f61",
+                        color: "#fff",
+                      }}
+                    />
+                  )}
+
+                  <Button
+                    onClick={() => removeItem(wishlistItem.id)}
+                    look="flat"
+                  >
+                    ❌
+                  </Button>
+                </div>
               </div>
             </div>
           </Animation>
