@@ -258,11 +258,24 @@ const Wishlist = () => {
                 }}
               >
                 {/* Left Section: Item Details */}
-                <div style={{ flexGrow: 1 }}>
+                <div
+                  style={{
+                    flexGrow: 1,
+                    opacity: wishlistItem.reserved ? 0.6 : 1, // Dim reserved items
+                    textDecoration: wishlistItem.reserved
+                      ? "line-through"
+                      : "none", // Strike-through
+                  }}
+                >
                   <strong>{wishlistItem.name}</strong> - ${wishlistItem.price}
-                  <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: wishlistItem.reserved ? "#888" : "#666",
+                      margin: 0,
+                    }}
+                  >
                     {wishlistItem.description}
-                    {wishlistItem.reserved ? "Reserved" : ""}
                   </p>
                 </div>
 
@@ -312,6 +325,7 @@ const Wishlist = () => {
             color: "white",
             transition: "all 0.3s ease",
             boxShadow: "0px 4px 6px rgba(0,0,0,0.1)",
+            width: "575px",
           }}
           onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
           onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
